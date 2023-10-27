@@ -1,0 +1,142 @@
+{
+  "name": "mongodb_oplog_growth_impacting_replication",
+  "description": "This incident type refers to a situation where the MongoDB Oplog, a capped collection in MongoDB that records all the write operations to a database, grows rapidly and impacts the replication process. This can occur for various reasons, such as high write volume or inefficient oplog retention settings. It can result in replication lag and failures, impacting the availability and consistency of the database.",
+  "params": [
+    {
+      "name": "NEW_SIZE_IN_MEGABYTES",
+      "value": ""
+    },
+    {
+      "name": "MONGODB_CONFIG_SERVER_ADDRESS",
+      "value": ""
+    },
+    {
+      "name": "MONGODB_COLLECTION_NAME",
+      "value": ""
+    },
+    {
+      "name": "MONGODB_DATABASE_NAME",
+      "value": ""
+    },
+    {
+      "name": "RETENTION_HOURS",
+      "value": ""
+    },
+    {
+      "name": "OPLOG_SIZE",
+      "value": ""
+    },
+    {
+      "name": "MONGODB_SHARD_ADDRESS",
+      "value": ""
+    },
+    {
+      "name": "SHARD_KEY_FIELD",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## MongoDB Oplog Growth Impacting Replication\nThis incident type refers to a situation where the MongoDB Oplog, a capped collection in MongoDB that records all the write operations to a database, grows rapidly and impacts the replication process. This can occur for various reasons, such as high write volume or inefficient oplog retention settings. It can result in replication lag and failures, impacting the availability and consistency of the database."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the current oplog size and usage"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${MONGODB_DATABASE_NAME} --eval \"printjson(db.oplog.rs.stats())\"`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the current replication status and lag"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DB_NAME} --eval \"printjson(rs.status())\"`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the current and historical oplog growth rate"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DB_NAME} --eval \"printjson(db.oplog.rs.stats(1024*1024).maxSize)\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the oplog retention settings"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DB_NAME} --eval \"printjson(db.getMongo().getDB('local').oplog.rs.options())\"`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Optimize the oplog retention settings to reduce oplog growth"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `mongo ${DB_NAME} --eval \"db.getMongo().getDB('local').runCommand({replSetResizeOplog: 1, size: ${NEW_SIZE_IN_MEGABYTES}})\"`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Increase the size of the oplog and adjust the retention settings to accommodate the write volume and replication needs of the system."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_oplog_config($RETENTION_HOURS, $OPLOG_SIZE)"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Implement sharding or horizontal scaling to distribute the load across multiple nodes and reduce the write volume on individual nodes."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_shard_and_configure_cluster($MONGODB_CONFIG_SERVER_ADDRESS, $MONGODB_COLLECTION_NAME, $MONGODB_DATABASE_NAME, $MONGODB_SHARD_ADDRESS, $SHARD_KEY_FIELD)"
+    }
+  ]
+}
